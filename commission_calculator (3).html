@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Commission Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0D1F3C;
+    --gold: #C8A84B;
+    --gold-dim: rgba(200,168,75,0.15);
+    --bg: #F7F6F2;
+    --card: #FFFFFF;
+    --text: #0D1F3C;
+    --muted: #6B7A90;
+    --border: rgba(13,31,60,0.1);
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .header { background: var(--navy); padding: 28px 20px 24px; position: relative; }
+  .header::before { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: var(--gold); }
+  .header-title { font-size: 20px; font-weight: 600; color: #fff; letter-spacing: -0.3px; }
+  .header-sub { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 4px; }
+  .main { padding: 20px 16px 40px; max-width: 480px; margin: 0 auto; }
+  .section-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 10px; margin-top: 24px; }
+  .section-label:first-of-type { margin-top: 0; }
+  .card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; margin-bottom: 12px; }
+  .job-card { padding: 20px; display: flex; align-items: center; gap: 8px; }
+  .currency-symbol { font-size: 28px; font-weight: 300; color: var(--muted); font-family: 'DM Mono', monospace; }
+  #jobInput { flex: 1; font-size: 32px; font-weight: 500; color: var(--text); border: none; outline: none; background: transparent; font-family: 'DM Mono', monospace; width: 100%; min-width: 0; }
+  #jobInput::placeholder { color: #C8CDD6; }
+  .tier-header { display: grid; grid-template-columns: 1fr 100px 68px; gap: 8px; padding: 10px 16px 6px; border-bottom: 1px solid var(--border); }
+  .th { font-size: 11px; color: var(--muted); font-weight: 500; }
+  .th:not(:first-child) { text-align: right; }
+  .tier-row { display: grid; grid-template-columns: 1fr 100px 68px; gap: 8px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .tier-row:last-child { border-bottom: none; }
+  .tier-row:focus-within { background: #FAFAF8; }
+  .tier-name { font-size: 13px; color: var(--muted); font-weight: 500; }
+  .tier-input { border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; font-size: 13px; font-family: 'DM Mono', monospace; font-weight: 500; color: var(--text); background: var(--bg); text-align: right; width: 100%; outline: none; transition: border-color 0.15s; -webkit-appearance: none; }
+  .tier-input:focus { border-color: var(--gold); background: #fff; }
+  .tier-input[disabled] { opacity: 0.4; cursor: not-allowed; }
+  .pct-wrap { position: relative; }
+  .pct-wrap .tier-input { padding-right: 22px; }
+  .pct-sign { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--muted); pointer-events: none; }
+  .reset-row { padding: 10px 16px; border-top: 1px solid var(--border); text-align: right; }
+  .reset-btn { background: none; border: none; color: var(--muted); font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; text-decoration: underline; text-underline-offset: 2px; padding: 4px 0; }
+  #resultSection { display: none; }
+  .result-summary { background: var(--navy); border-radius: var(--radius); padding: 20px; margin-bottom: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; position: relative; overflow: hidden; }
+  .result-summary::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--gold); }
+  .rs-label { font-size: 11px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; font-weight: 500; }
+  .rs-value { font-size: 24px; font-weight: 600; color: #fff; font-family: 'DM Mono', monospace; letter-spacing: -0.5px; }
+  .rs-value.gold { color: var(--gold); }
+  .br-item { display: flex; align-items: center; padding: 13px 16px; border-bottom: 1px solid var(--border); gap: 12px; }
+  .br-item:last-child { border-bottom: none; }
+  .br-item.inactive { opacity: 0.35; }
+  .br-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+  .br-item.active .br-dot { background: var(--gold); }
+  .br-info { flex: 1; min-width: 0; }
+  .br-tier { font-size: 13px; font-weight: 500; color: var(--text); }
+  .br-calc { font-size: 11px; color: var(--muted); margin-top: 2px; font-family: 'DM Mono', monospace; }
+  .br-amount { font-size: 15px; font-weight: 600; font-family: 'DM Mono', monospace; color: var(--muted); flex-shrink: 0; }
+  .br-item.active .br-amount { color: var(--gold); }
+  .total-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: var(--gold-dim); border-top: 1px solid rgba(200,168,75,0.3); }
+  .total-label { font-size: 14px; font-weight: 600; color: var(--navy); }
+  .total-value { font-size: 20px; font-weight: 600; color: var(--gold); font-family: 'DM Mono', monospace; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-in { animation: fadeUp 0.25s ease both; }
+  input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+  input[type=number] { -moz-appearance: textfield; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">Commission Calculator</div>
+  <div class="header-sub">Tiered marginal model</div>
+</div>
+
+<div class="main">
+
+  <div class="section-label">Job value</div>
+  <div class="card">
+    <div class="job-card">
+      <div class="currency-symbol">$</div>
+      <input id="jobInput" type="number" inputmode="decimal" placeholder="0" autocomplete="off">
+    </div>
+  </div>
+
+  <div class="section-label">Tiers</div>
+  <div class="card">
+    <div class="tier-header">
+      <div class="th">Tier</div>
+      <div class="th">Up to</div>
+      <div class="th">Rate</div>
+    </div>
+    <div class="tier-row">
+      <div class="tier-name">Tier 1</div>
+      <div><input class="tier-input" id="t1max" type="number" inputmode="decimal" value="10000"></div>
+      <div class="pct-wrap"><input class="tier-input" id="t1pct" type="number" inputmode="decimal" value="25"><span class="pct-sign">%</span></div>
+    </div>
+    <div class="tier-row">
+      <div class="tier-name">Tier 2</div>
+      <div><input class="tier-input" id="t2max" type="number" inputmode="decimal" value="25000"></div>
+      <div class="pct-wrap"><input class="tier-input" id="t2pct" type="number" inputmode="decimal" value="18"><span class="pct-sign">%</span></div>
+    </div>
+    <div class="tier-row">
+      <div class="tier-name">Tier 3</div>
+      <div><input class="tier-input" disabled placeholder="above"></div>
+      <div class="pct-wrap"><input class="tier-input" id="t3pct" type="number" inputmode="decimal" value="12"><span class="pct-sign">%</span></div>
+    </div>
+    <div class="reset-row">
+      <button class="reset-btn" onclick="resetTiers()">Reset to defaults</button>
+    </div>
+  </div>
+
+  <div id="resultSection">
+    <div class="section-label">Result</div>
+    <div class="result-summary animate-in">
+      <div>
+        <div class="rs-label">Job value</div>
+        <div class="rs-value" id="resJob">-</div>
+      </div>
+      <div>
+        <div class="rs-label">Commission</div>
+        <div class="rs-value gold" id="resTotal">-</div>
+      </div>
+    </div>
+    <div class="card animate-in">
+      <div id="breakdownRows"></div>
+      <div class="total-row">
+        <div class="total-label">Total commission</div>
+        <div class="total-value" id="totalLine">-</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function fmt(n) {
+  return '$' + Math.round(n).toLocaleString('en-US');
+}
+function getTiers() {
+  return [
+    { max: parseFloat(document.getElementById('t1max').value) || 10000, pct: parseFloat(document.getElementById('t1pct').value) || 25 },
+    { max: parseFloat(document.getElementById('t2max').value) || 25000, pct: parseFloat(document.getElementById('t2pct').value) || 18 },
+    { max: Infinity, pct: parseFloat(document.getElementById('t3pct').value) || 12 }
+  ];
+}
+function calc() {
+  const job = parseFloat(document.getElementById('jobInput').value);
+  const sec = document.getElementById('resultSection');
+  if (!job || job <= 0) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  const tiers = getTiers();
+  const t1max = tiers[0].max;
+  const t2max = tiers[1].max;
+  const slices = [
+    { label: 'Tier 1', range: '$0 - ' + fmt(t1max), from: 0, to: t1max, pct: tiers[0].pct },
+    { label: 'Tier 2', range: fmt(t1max) + ' - ' + fmt(t2max), from: t1max, to: t2max, pct: tiers[1].pct },
+    { label: 'Tier 3', range: 'Above ' + fmt(t2max), from: t2max, to: Infinity, pct: tiers[2].pct }
+  ];
+  let total = 0;
+  const rows = slices.map(s => {
+    const toVal = s.to === Infinity ? job : s.to;
+    const chunk = Math.max(0, Math.min(job, toVal) - s.from);
+    const comm = chunk * s.pct / 100;
+    total += comm;
+    return { ...s, chunk, comm, active: chunk > 0 };
+  });
+  document.getElementById('resJob').textContent = fmt(job);
+  document.getElementById('resTotal').textContent = fmt(total);
+  document.getElementById('totalLine').textContent = fmt(total);
+  document.getElementById('breakdownRows').innerHTML = rows.map(r => `
+    <div class="br-item ${r.active ? 'active' : 'inactive'}">
+      <div class="br-dot"></div>
+      <div class="br-info">
+        <div class="br-tier">${r.label} <span style="font-weight:400;color:var(--muted);font-size:11px">${r.range}</span></div>
+        <div class="br-calc">${r.active ? fmt(r.chunk) + ' x ' + r.pct + '%' : 'not reached'}</div>
+      </div>
+      <div class="br-amount">${r.active ? fmt(r.comm) : '$0'}</div>
+    </div>
+  `).join('');
+}
+function resetTiers() {
+  document.getElementById('t1max').value = 10000;
+  document.getElementById('t2max').value = 25000;
+  document.getElementById('t1pct').value = 25;
+  document.getElementById('t2pct').value = 18;
+  document.getElementById('t3pct').value = 12;
+  calc();
+}
+document.querySelectorAll('input').forEach(el => el.addEventListener('input', calc));
+</script>
+</body>
+</html>
